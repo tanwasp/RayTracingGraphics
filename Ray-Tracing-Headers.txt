@@ -1,0 +1,107 @@
+int main(int, char *argv[])
+{
+    parseSceneFile(argv[1]);
+    initializeImage();
+    RT_algorithm();
+    writeImageFile();
+    return 0;
+}
+
+void RT_algorithm()
+{
+  for (...)
+  {
+    for (...)
+    {
+      ... RT_trace(R, 1);
+    }
+  }
+}
+
+
+Color RT_trace(const Ray& r, double depth)
+{
+  ... nearestIntersection(r, epsilon, maxT);
+  ... RT_shade(figure, r, i, normal, entering, depth);
+}
+
+pair<double, Figure*> nearestIntersection (const Ray& r,
+                                           double minT, double maxT,
+                                           bool mayBeTransparent = true)
+{
+ for (...)
+ {
+  ...intersection(r, minT, maxT); 
+  }
+}
+
+double Sphere::intersection(const Ray& r, double minT, double maxT) const
+{
+}
+
+double Plane::intersection(const Ray& r, double minT, double maxT) const
+{
+}
+
+
+
+
+Color RT_shade(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal,
+               bool entering, double depth)
+{
+ Color newColor = ambient * obj->getColorAmbient();
+ ... RT_lights(obj, ray, i, normal)
+ ... RT_reflect(obj, ray, i, normal, depth);
+ ... RT_transmit(obj, ray, i, normal, entering, depth);
+...
+}
+
+Color RT_lights(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal)
+{
+for(...)
+  {
+    ... nearestIntersection(L_Ray,epsilon,1.0,false);
+    ... diffuseShade(obj,light,dotProduct);
+    ... specularShade(obj,normal,light,
+                      lightDirection,dotProduct,
+                      ray);
+  }
+   ...
+}
+
+Color specularShade(Figure* obj, const Vec& normal,
+                    Light* light, const Vec& lightDirection, double dotProduct,
+                    const Ray& ray)
+{
+...
+}
+
+
+Color diffuseShade(Figure* obj, Light* light, double dotProduct)
+{
+...
+}
+
+
+Color RT_transmit(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal,
+                  bool entering, double depth)
+{
+... RT_trace(transmittedRay,depth+1);
+}
+
+
+Color RT_reflect(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal, double depth)
+{
+ RT_trace(reflectedRay,depth+1);
+}
+
+
+
+
+
+
+
+
+
+
+

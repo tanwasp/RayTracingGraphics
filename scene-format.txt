@@ -1,0 +1,94 @@
+# Ray Tracing Scene File:
+
+# Camera Origin:
+0.0  0.0  0.0
+
+# Z Coordinate of Plane of Projection:
+-2.0
+ 
+# Min X and Max X coordinates of raster:
+-1.0  1.0
+
+# Min Y and Max Y coordinates of raster:
+-1.0  1.0
+
+# Background red, green and blue values: 
+0.0  0.0  0.0
+
+# Ambient light red, green and blue values: 
+0.8  0.8  0.8
+
+# Maximum depth of ray tracing:
+1
+
+# X and Y resolution 
+500 500
+
+# Number of directional light sources: 
+2
+
+# Descriptions of directional light sources: 
+#  Position: double x, double y, double z.    
+#  Shading:  double r, double g, double b.    
+#  Attenuation: double c0, double c1, double c2. 
+-4.5  4.5  6.0    1.0 1.0 1.0     1.0 0.0 0.0 
+ 4.5  4.5  6.0    1.0 1.0 1.0     1.0 0.0 0.0
+
+# Number of spheres: 
+1
+
+# Descriptions of spheres: 
+# Geometry: double x, double y, double z, double r. 
+# Ambient Coefficients: double kar, double kag, double kab.
+# Diffuse Coeffections: double kdr, double kdg, double kdb. 
+# Specular Coefficients: double ksr, double ksg, double ksb.
+# Inter-Object Reflectivity Coefficients: double krr, double krg, double krb,
+# Inter-Object Transmissivity Coefficients: double ktr, double ktg, double ktb.
+# Specularity: double specularity.
+# Index of Refraction: double refractionIndex. 
+# Reflectivity Flag: int isReflective.
+# Transmissivity Flag: int isTransparent. 
+
+-0.0  0.0  -7.50  1.0    0.00  0.3  0.3    0.0  0.3  0.3   0.3  0.3  0.3   
+ 0.0  0.0  0.0           0.0  0.0  0.0     20.0      1.0   0    0  
+
+# Number of Planes: 
+5
+
+# Descriptions of planes: 
+# Geometry: double x, double y, double z, double r. 
+# Ambient Coefficients: double kar, double kag, double kab.
+# Diffuse Coeffections: double kdr, double kdg, double kdb. 
+# Specular Coefficients: double ksr, double ksg, double ksb.
+# Inter-Object Reflectivity Coefficients: double krr, double krg, double krb,
+# Inter-Object Transmissivity Coefficients: double ktr, double ktg, double ktb.
+# Specularity: double specularity.
+# Index of Refraction: double refractionIndex. 
+# Reflectivity Flag: int isReflective.
+# Transmissivity Flag: int isTransparent. 
+# Direction of checkered pattern: double p1x, double p1y, double p1z. 
+# Direction of checkered pattern: double p2x, double p2y, double p2z.
+
+-0.0  0.0  1.0 -7.50    0.00  0.3  0.3  0.0  0.3  0.3   0.3  0.3  0.3   
+ 0.0  0.0  0.0          0.0  0.0  0.0   20.0 1.0        0    0  
+ 0.0  0.0  0.0          0.0  0.0  0.0 
+
+ 0.0  0.0  -1.0  20.0   0.5  0.5  0.5   0.5  0.05  0.05  0.05  0.05  0.05   
+ 0.0  0.0  0.0          0.0  0.0  0.0   1.0  1.0   0   0
+ 0.0  0.0  0.0          0.0  0.0  0.0 
+
+ 0.0  1.0  0.0  5.0     0.5  0.5  0.0   0.5  0.5  0.0  0.6  0.6  0.0   
+ 0.0  0.0  0.0          0.0  0.0  0.0   1.0  1.0  0    0  
+ 0.0  0.0  0.0          0.0  0.0  0.0 
+
+ 0.0  -1.0  0.0  5.0    0.5  0.5  0.0   0.5  0.5  0.0  0.6  0.6  0.0   
+ 0.0  0.0  0.0          0.0  0.0  0.0   1.0  1.0  0    0  
+ 0.0  0.0  0.0          0.0  0.0  0.0 
+
+ 0.0  0.0  0.0  5.0    0.0  0.5  0.5    0.0  0.5  0.5  0.0  0.6  0.6   
+ 0.0  0.0  0.0         0.0  0.0  0.0    1.0  1.0  0    0  
+ 0.0  0.0  0.0         0.0  0.0  0.0 
+
+ 1.0  0.0  0.0  5.0    0.0  0.5  0.5    0.0  0.5  0.5  0.0  0.6  0.6   
+ 0.0  0.0  0.0         0.0  0.0  0.0    1.0  1.0  0    0  
+ 0.0  0.0  0.0         0.0  0.0  0.0 
