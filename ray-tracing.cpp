@@ -585,45 +585,92 @@ void openOutputFile(char* outputFile, ofstream& ofs) {
 
 
 
-Color RT_reflect(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal, double depth)
+// Calculates the reflection direction given the ray and surface normal
+Vec calculateReflectionDirection(const Ray& ray, const Vec& normal)
 {
-    if (depth <= maxDepth && obj->hasReflection())
-    {
-        Vec viewDirection = -1.0 * ray.calculateDirection();
-        viewDirection.normalize();
-        double dotProduct = viewDirection.dotProduct(normal);
-        Vec reflectDirection = ((2.0 * dotProduct) * normal).subtract(viewDirection);
-        Ray reflectedRay(i, i.add(reflectDirection));
-        return obj->getReflectivity().multiply(RT_trace(reflectedRay, depth + 1));
-    }
-    else return BLACK_COLOR;
+    Vec incomingDirection = ray.calculateDirection();
+    incomingDirection.normalize();
+    double incidenceDotNormal = incomingDirection.dotProduct(normal);
+    return (2 * incidenceDotNormal * normal).subtract(incomingDirection);
 }
 
-Color RT_transmit(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal,
-    bool entering, double depth)
+// Calculates the color from a reflected ray
+Color calculateReflectedColor(Figure* obj, const Ray& reflectedRay, double depth)
 {
-    if (depth <= maxDepth && obj->hasTransmission())
-    {
-        Vec viewDirection = -1.0 * ray.calculateDirection();
-        viewDirection.normalize();
-        double dotProduct = viewDirection.dotProduct(normal);
-        double dotProduct2 = dotProduct * dotProduct;
-        double indexRatio = entering ? 1.0 / obj->getRefractionIndex() : obj->getRefractionIndex();
-        double indexRatio2 = indexRatio * indexRatio;
-        double temp1 = indexRatio * dotProduct;
-        double temp2 = 1.0 - indexRatio2 + indexRatio2 * dotProduct2;
-        if (temp2 >= 0.0)
-        {
-            double temp3 = temp1 - sqrt(temp2);
-            Vec transmitDirection = (temp3 * normal).subtract(indexRatio * viewDirection);
-            Ray transmittedRay(i, i.add(transmitDirection));
-            return obj->getTransmissivity().multiply(RT_trace(transmittedRay, depth + 1));
-        }
-        else return BLACK_COLOR;
-    }
-    else return BLACK_COLOR;
-
+    Color reflectionFactor = obj->getReflectivity();
+    Color recursiveColor = RT_trace(reflectedRay, depth + 1);
+    return reflectionFactor.multiply(recursiveColor);
 }
+
+// Reflects a ray based on the interaction with an object's surface
+Color RT_reflect(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal, double depth)
+{
+    if (depth > maxDepth || !obj->hasReflection()) {
+        return BLACK_COLOR;
+    }
+
+    Vec reflectionDirection = calculateReflectionDirection(ray, normal);
+    Ray reflectedRay(intersection, intersection.add(reflectionDirection));
+    return calculateReflectedColor(obj, reflectedRay, depth);
+}
+
+
+
+
+
+
+
+// Computes the index ratio based on whether the ray is entering or exiting the material
+double calculateIndexRatio(Figure* obj, bool entering)
+{
+    double refractionIndex = obj->getRefractionIndex();
+    return entering ? 1.0 / refractionIndex : refractionIndex;
+}
+
+// Calculates the direction of a transmitted ray considering refraction
+Vec calculateTransmissionDirection(const Ray& ray, const Vec& normal, double indexRatio)
+{
+    Vec incomingDirection = ray.calculateDirection();  // Get the incoming direction
+    incomingDirection.normalize();  // Normalize the copied vector
+
+    double incidenceDotNormal = incomingDirection.dotProduct(normal);
+    double k = 1.0 - indexRatio * indexRatio * (1.0 - incidenceDotNormal * incidenceDotNormal);
+
+    if (k < 0.0) {
+        return Vec();  // Indicates total internal reflection
+    }
+
+    return ((indexRatio * incidenceDotNormal - sqrt(k)) * normal).subtract(indexRatio * incomingDirection);
+}
+
+// Calculates the color from a transmitted ray
+Color calculateTransmittedColor(Figure* obj, const Ray& transmittedRay, double depth)
+{
+    Color transmissivity = obj->getTransmissivity();
+    Color recursiveColor = RT_trace(transmittedRay, depth + 1);
+    return transmissivity.multiply(recursiveColor);
+}
+
+// Transmits a ray through an object considering refraction
+Color RT_transmit(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal, bool entering, double depth)
+{
+    if (depth > maxDepth || !obj->hasTransmission()) {
+        return BLACK_COLOR;
+    }
+
+    double indexRatio = calculateIndexRatio(obj, entering);
+    Vec transmissionDirection = calculateTransmissionDirection(ray, normal, indexRatio);
+
+    if (transmissionDirection.magnitude() == 0) {  // Handles total internal reflection
+        return BLACK_COLOR;
+    }
+
+    Ray transmittedRay(intersection, intersection.add(transmissionDirection));
+    return calculateTransmittedColor(obj, transmittedRay, depth);
+}
+
+
+
 
 Color diffuseShade(Figure* obj, Light* light, double dotProduct)
 {
