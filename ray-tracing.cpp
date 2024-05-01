@@ -671,136 +671,169 @@ Color RT_transmit(Figure* obj, const Ray& ray, const Vec& intersection, const Ve
 
 
 
-
+// Calculates the diffuse component of shading based on the light's interaction with an object
 Color diffuseShade(Figure* obj, Light* light, double dotProduct)
 {
-    if (dotProduct > 0.0)
-        return dotProduct * (light->getShading().multiply(obj->getDiffuseColor()));
-    else return BLACK_COLOR;
+    return (dotProduct > 0.0) ? dotProduct * light->getShading().multiply(obj->getDiffuseColor()) : BLACK_COLOR;
 }
 
-Color specularShade(Figure* obj, const Vec& normal,
-    Light* light, const Vec& lightDirection, double dotProduct,
-    const Ray& ray)
+// Helper to calculate reflected direction for specular lighting
+Vec calculateReflectDirection(const Vec& normal, const Vec& lightDirection, double dotProduct)
 {
-    Vec reflectDirection = ((2.0 * dotProduct) * normal).subtract(lightDirection);
-    Vec viewDirection = -1.0 * ray.calculateDirection();
+    return (2.0 * dotProduct * normal).subtract(lightDirection);
+}
+
+// Computes intensity of specular reflection
+double calculateSpecularIntensity(const Ray& ray, const Vec& reflectDirection, double shininess)
+{
+    Vec viewDirection = -1 * ray.calculateDirection();
     viewDirection.normalize();
-    double dotProduct2 = viewDirection.dotProduct(reflectDirection);
-    if (dotProduct2 > 0.0)
-    {
-        double shineFactor = pow(dotProduct2, obj->getShininess());
-        return shineFactor * (light->getShading().multiply(obj->getSpecularColor()));
-    }
-    return BLACK_COLOR;
+    double dotProduct = viewDirection.dotProduct(reflectDirection);
+    return (dotProduct > 0.0) ? pow(dotProduct, shininess) : 0.0;
+}
+
+// Calculates the specular component of shading
+Color specularShade(Figure* obj, const Vec& normal, Light* light, const Vec& lightDirection, double dotProduct, const Ray& ray)
+{
+    Vec reflectDirection = calculateReflectDirection(normal, lightDirection, dotProduct);
+    double specularity = calculateSpecularIntensity(ray, reflectDirection, obj->getShininess());
+    return (specularity > 0.0) ? specularity * light->getShading().multiply(obj->getSpecularColor()) : BLACK_COLOR;
 }
 
 
-pair<double, Figure*> nearestIntersection(const Ray& r,
-    double minT, double maxT,
-    bool mayBeTransparent = true)
+
+
+// Finds the nearest intersection of a ray with any figure in the scene, considering transparency
+pair<double, Figure*> nearestIntersection(const Ray& r, double minT, double maxT, bool mayBeTransparent = true)
 {
-    double t = maxT + epsilon;
-    Figure* f = NULL;
-    for (list<Figure*>::iterator iter = shapeList.begin();
-        iter != shapeList.end();
-        ++iter)
-    {
-        if (mayBeTransparent || !((*iter)->hasTransmission()))
-        {
-            double newT = (*iter)->calculateIntersection(r, minT, maxT);
-            if (newT < t && newT >= minT)
-            {
-                t = newT;
-                f = *iter;
+    double nearestT = maxT + epsilon;
+    Figure* nearestFigure = NULL;
+
+    for (auto& figure : shapeList) {
+        if (mayBeTransparent || !figure->hasTransmission()) {
+            double currentT = figure->calculateIntersection(r, minT, maxT);
+            if (currentT < nearestT && currentT >= minT) {
+                nearestT = currentT;
+                nearestFigure = figure;
             }
         }
     }
-    return pair<double, Figure*>(t, f);
+    return { nearestT, nearestFigure };
 }
 
 
-Color RT_lights(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal)
+// Check if the light source is visible from the intersection point
+bool isVisible(const Vec& intersection, Light* light)
 {
-    Color color;
-    for (list<Light*>::iterator iter = lightList.begin();
-        iter != lightList.end();
-        ++iter)
-    {
-        Light* light = *iter;
-        Ray L_Ray(i, light->getPosition());
-        double attenuation = light->calculateAttenuation(i);
-        pair<double, Figure*> nint = nearestIntersection(L_Ray, epsilon, 1.0, false);
-        if (nint.second == NULL)
-        {
-            Vec lightDirection = L_Ray.calculateDirection();
-            lightDirection.normalize();
-            double dotProduct = lightDirection.dotProduct(normal);
-            color = color.add(attenuation * (diffuseShade(obj, light, dotProduct)));
-            color = color.add(attenuation * (specularShade(obj, normal, light,
-                lightDirection, dotProduct,
-                ray)));
-        }
-    }
+    Ray lightRay(intersection, light->getPosition());
+    pair<double, Figure*> intersectionInfo = nearestIntersection(lightRay, epsilon, 1.0, false);
+    return (intersectionInfo.second == NULL);
+}
+
+// Calculates the color contribution from a single light source
+Color calculateLightContribution(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal, Light* light)
+{
+    // Make a copy of the direction vector and normalize the copy
+    Vec lightDirection = light->getPosition().subtract(intersection);
+    lightDirection.normalize();  // Normalize the local copy
+
+    double dotProduct = normal.dotProduct(lightDirection);
+    Color color = diffuseShade(obj, light, dotProduct);
+    color = color.add(specularShade(obj, normal, light, lightDirection, dotProduct, ray));
+
     return color;
 }
 
 
-Color RT_shade(Figure* obj, const Ray& ray, const Vec& i, const Vec& normal,
-    bool entering, double depth)
+
+
+// Calculate the combined color from all lights interacting with the intersection point
+Color RT_lights(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal)
 {
-    Color newColor = ambient.multiply(obj->getAmbientColor());
-    newColor = newColor.add(RT_lights(obj, ray, i, normal));
-    if (depth < maxDepth)
+    Color totalColor;
+    for (Light* light : lightList)
     {
-        newColor = newColor.add(RT_reflect(obj, ray, i, normal, depth));
-        newColor = newColor.add(RT_transmit(obj, ray, i, normal, entering, depth));
+        if (isVisible(intersection, light)) {
+            double attenuation = light->calculateAttenuation(intersection);
+            totalColor = totalColor.add(attenuation * calculateLightContribution(obj, ray, intersection, normal, light));
+        }
     }
-    return newColor;
+    return totalColor;
 }
 
 
 
+// Computes the ambient component of the shading
+Color calculateAmbientShading(Figure* obj)
+{
+    return ambient.multiply(obj->getAmbientColor());
+}
+
+
+// Calculates the final shading at a point taking into account ambient, diffuse, and specular contributions as well as reflections and transmissions
+Color RT_shade(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal, bool entering, double depth)
+{
+    Color shadedColor = calculateAmbientShading(obj);
+    shadedColor = shadedColor.add(RT_lights(obj, ray, intersection, normal));
+
+    if (depth < maxDepth) {
+        shadedColor = shadedColor.add(RT_reflect(obj, ray, intersection, normal, depth));
+        shadedColor = shadedColor.add(RT_transmit(obj, ray, intersection, normal, entering, depth));
+    }
+
+    return shadedColor;
+}
+
+
+
+// Trace a ray into the scene and determine the color at the intersection point
 Color RT_trace(const Ray& r, double depth)
 {
-
     pair<double, Figure*> intersection = nearestIntersection(r, epsilon, maxT);
-    if (intersection.second == NULL) return backgroundColor;
-    else
-    {
-        Figure* figure = intersection.second;
-        Vec i = r.computePosition(intersection.first);
-        pair<Vec, bool> normalData = figure->calculateNormal(i, r);
-        Vec normal = normalData.first;
-        bool entering = normalData.second;
-        return RT_shade(figure, r, i, normal, entering, depth);
+    if (!intersection.second) {
+        return backgroundColor;  // No intersection, return the background color
     }
+
+    // Calculate intersection point and normal
+    Vec intersectionPoint = r.computePosition(intersection.first);
+    pair<Vec, bool> normalData = intersection.second->calculateNormal(intersectionPoint, r);
+    Vec normal = normalData.first;
+    bool entering = normalData.second;
+
+    // Compute shading for the intersection
+    return RT_shade(intersection.second, r, intersectionPoint, normal, entering, depth);
 }
 
+
+// Calculate the center coordinates of a pixel in the image grid
 pair<double, double> pixelCenter(int i, int j)
 {
     double x = pixelStartX + j * pixelWidth;
     double y = pixelStartY - i * pixelHeight;
-    return pair<double, double>(x, y);
+    return { x, y };  // Using modern C++ initializer list
 }
 
+
+
+// Main rendering loop that processes each pixel to generate the final image
 void RT_algorithm()
 {
-    Vec p0(cameraX, cameraY, cameraZ);
+    Vec cameraOrigin(cameraX, cameraY, cameraZ);  // Define the camera origin
     for (int i = 0; i < verticalResolution; i++)
     {
         for (int j = 0; j < horizontalResolution; j++)
         {
-            pair<double, double> pc = pixelCenter(i, j);
+            pair<double, double> pc = pixelCenter(i, j);  // Get pixel center
             double x = pc.first;
             double y = pc.second;
-            Vec p1(x, y, zCoor);
-            Ray R(p0, p1);
-            image[i][j] = RT_trace(R, 1);
+            Vec pixelPosition(x, y, zCoor);   // Position in space for the pixel
+            Ray ray(cameraOrigin, pixelPosition);  // Create a ray from camera to pixel
+            image[i][j] = RT_trace(ray, 1);  // Trace the ray and store the result in the image
         }
-      
     }
 }
+
+
 
 double maxDifference(int i, int j)
 {

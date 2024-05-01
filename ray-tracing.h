@@ -182,10 +182,11 @@ public:
 // Plane Header
 class Plane : public Figure {
 private:
+    Vec direction1;
+    Vec direction2;
     Vec normalVector; 
     double distanceFromOrigin; 
-    Vec direction1; 
-    Vec direction2; 
+    
 
 public:
     explicit Plane(std::ifstream& ifs);
