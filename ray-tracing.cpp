@@ -835,52 +835,62 @@ void RT_algorithm()
 
 
 
-double maxDifference(int i, int j)
-{
+double getMaxColorDifference(const Color& pixelColor, const Color& neighborColor) {
+    return std::max(0.0, pixelColor.difference(neighborColor));
+}
+
+double maxDifference(int i, int j) {
     double maximum = 0.0;
-    Color& pixelColor = image[i][j];
-    for (int m = -1; m < 2; m++)
-    {
-        if (i + m == -1 || i + m == verticalResolution) continue;
-        for (int n = -1; n < 2; n++)
-        {
-            if (j + n == -1 || j + n == horizontalResolution) continue;
-            if (m != 0 || n != 0)
-            {
-                Color& neighbor = image[i + m][j + n];
-                double difference = pixelColor.difference(neighbor);
-                maximum = getMax(maximum, difference);
+    const Color& pixelColor = image[i][j];
+
+    for (int m = -1; m <= 1; m++) {
+        int mi = i + m;
+        if (mi < 0 || mi >= verticalResolution) continue;
+
+        for (int n = -1; n <= 1; n++) {
+            int nj = j + n;
+            if (nj < 0 || nj >= horizontalResolution) continue;
+            if (m != 0 || n != 0) {
+                const Color& neighborColor = image[mi][nj];
+                maximum = std::max(maximum, getMaxColorDifference(pixelColor, neighborColor));
             }
         }
     }
     return maximum;
 }
 
-void superSample(int i, int j)
-{
-    Color accumulate;
-    Vec p0(cameraX, cameraY, cameraZ);
+Color traceSubPixel(const Vec& cameraOrigin, double x, double y, int depth) {
+    Vec pixelPosition(x, y, zCoor);
+    Ray ray(cameraOrigin, pixelPosition);
+    return RT_trace(ray, depth);
+}
+
+void superSample(int i, int j) {
+    Vec cameraOrigin(cameraX, cameraY, cameraZ);
     pair<double, double> pc = pixelCenter(i, j);
     double pcX = pc.first;
     double pcY = pc.second;
-    int num = 2 * ssRate + 1;
-    double w = pixelWidth / num;
-    double h = pixelHeight / num;
-    for (int ii = -ssRate; ii <= ssRate; ii++)
-        for (int jj = -ssRate; jj <= ssRate; jj++)
-        {
-            if (ii == 0 && jj == 0) accumulate = accumulate.add(image[i][j]);
-            else {
-                double x = pcX + jj * w;
-                double y = pcY + ii * h;
-                Vec p1(x, y, zCoor);
-                Ray R(p0, p1);
-                accumulate = accumulate.add(RT_trace(R, 1));
-            }
+
+    int numSamples = 2 * ssRate + 1;
+    double subPixelWidth = pixelWidth / numSamples;
+    double subPixelHeight = pixelHeight / numSamples;
+    Color accumulate;
+
+    for (int ii = -ssRate; ii <= ssRate; ii++) {
+        for (int jj = -ssRate; jj <= ssRate; jj++) {
+            double x = pcX + jj * subPixelWidth;
+            double y = pcY + ii * subPixelHeight;
+            if (ii == 0 && jj == 0)
+                accumulate = accumulate.add(image[i][j]); // Use the original pixel color for the center
+            else
+                accumulate = accumulate.add(traceSubPixel(cameraOrigin, x, y, 1)); // Trace and add the color from super sampled pixel
         }
-    Color average = (1.0 / (num * num)) * accumulate;
+    }
+
+    Color average = accumulate * (1.0 / (numSamples * numSamples)); // Calculate average color
     image[i][j] = average;
 }
+
 
 void antiAliasing()
 {
