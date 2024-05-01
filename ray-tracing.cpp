@@ -1,18 +1,40 @@
 #include <cstdlib>
 #include <cmath>
-#include <cfloat>
-#include <fstream>
 #include <cassert>
 #include <list>
 #include <vector>
+
 #include <iostream>
+
+#include <cfloat>
+#include <fstream>
+
+
 
 using namespace std;
 
+// importing header file
+
 #include "ray-tracing.h"
 
+// defining global variables and constants
 
-vector< vector<Color> > image;
+double pixW;
+double  pixH;
+
+double minimumX,   maximumX;
+double minimumY, maximumY;
+
+double  pixStartX;
+double pixStartY;
+
+int ssRate = 1;
+
+int horizontalResolution, verticalResolution;
+double zCoor;
+
+
+vector < vector<  Color > > image;
 
 list<Figure*> shapeList;
 list<Light*> lightList;
@@ -21,25 +43,18 @@ list<Light*> lightList;
 const double epsilon = 0.00000000001;
 const int colorScale = 255;
 
-const double aaThreshold = 0.25;
-int ssRate = 1;
 
-double cameraX, cameraY, cameraZ;
-int horizontalResolution, verticalResolution;
-double zCoor;
-double minX, maxX;
-double minY, maxY;
-double pixelWidth;
-double pixelHeight;
-double pixelStartX;
-double pixelStartY;
+
+double camera1, camera2, camera3;
+
+
+const double aaThreshold = 0.25;
 
 int maxDepth;
 Color backgroundColor;
 Color ambient;
 
-const Color BLACK_COLOR;
-const double maxT = 1000000;
+
 
 
 
@@ -53,11 +68,16 @@ const double maxT = 1000000;
 int clamp(int value, int minVal, int maxVal) { return (value < minVal) ? minVal : (value > maxVal ? maxVal : value); }
 int getMax(int first, int second) { return (first > second) ? first : second; }
 
+const double maximumTimes = 1000000;
+
 Color::Color() : redComponent(0.0), greenComponent(0.0), blueComponent(0.0) {}
 
 Color::Color(std::ifstream& input) {
     input >> redComponent >> greenComponent >> blueComponent;
 }
+
+const Color Default_black;
+
 
 Color::Color(double red, double green, double blue) : redComponent(red), greenComponent(green), blueComponent(blue) {}
 
@@ -344,7 +364,7 @@ Sphere::Sphere(std::ifstream& ifs) : Figure(), center(ifs) {
     loadMaterialProperties(ifs);
 }
 
-double Sphere::calculateIntersection(const Ray& ray, double minT, double maxT) const {
+double Sphere::calculateIntersection(const Ray& ray, double minT, double maximumTimes) const {
     Vec rayDirection = ray.getEndPoint().subtract(ray.getOrigin());
     Vec toRayOrigin = ray.getOrigin().subtract(center);
 
@@ -354,7 +374,7 @@ double Sphere::calculateIntersection(const Ray& ray, double minT, double maxT) c
 
     double discriminant = (b * b) - (4.0 * a * c);
     if (discriminant < 0.0) {
-        return maxT + 1.0; // No intersection
+        return maximumTimes + 1.0; // No intersection
     }
 
     double sqrtDiscriminant = sqrt(discriminant);
@@ -362,17 +382,17 @@ double Sphere::calculateIntersection(const Ray& ray, double minT, double maxT) c
 
     // Try the first root
     double t1 = (-b - sqrtDiscriminant) * invDenom;
-    if (t1 >= minT && t1 < maxT) {
+    if (t1 >= minT && t1 < maximumTimes) {
         return t1;
     }
 
     // Try the second root
     double t2 = (-b + sqrtDiscriminant) * invDenom;
-    if (t2 >= minT && t2 < maxT) {
+    if (t2 >= minT && t2 < maximumTimes) {
         return t2;
     }
 
-    return maxT + 1.0; // No valid intersection in the range
+    return maximumTimes + 1.0; // No valid intersection in the range
 }
 
 std::pair<Vec, bool> Sphere::calculateNormal(const Vec& intersectionPoint, const Ray& ray) const {
@@ -398,16 +418,16 @@ Plane::Plane(std::ifstream& ifs) : Figure(), normalVector(ifs) {
     direction2 = Vec(ifs);
 }
 
-double Plane::calculateIntersection(const Ray& ray, double minT, double maxT) const {
+double Plane::calculateIntersection(const Ray& ray, double minT, double maximumTimes) const {
     Vec rayDirection = ray.calculateDirection();
     double numerator = distanceFromOrigin - ray.getOrigin().dotProduct(normalVector);
     double denominator = rayDirection.dotProduct(normalVector);
 
     if (std::abs(denominator) < epsilon) // Using std::abs for clarity
-        return maxT + 1.0;
+        return maximumTimes + 1.0;
 
     double t = numerator / denominator;
-    return (t >= minT && t <= maxT) ? t : maxT + 1.0;
+    return (t >= minT && t <= maximumTimes) ? t : maximumTimes + 1.0;
 }
 
 std::pair<Vec, bool> Plane::calculateNormal(const Vec&, const Ray& ray) const {
@@ -431,7 +451,7 @@ Quadric::Quadric(std::ifstream& ifs) : Figure(), geometry(ifs) {
     loadMaterialProperties(ifs);
 }
 
-double Quadric::calculateIntersection(const Ray& ray, double minT, double maxT) const {
+double Quadric::calculateIntersection(const Ray& ray, double minT, double maximumTimes) const {
     Vect p0Vect(ray.getOrigin());
     Vect p1Vect(ray.getEndPoint());
     Vect pDiffVect = p1Vect.subtract(p0Vect);
@@ -441,18 +461,18 @@ double Quadric::calculateIntersection(const Ray& ray, double minT, double maxT) 
     double c = p0Vect.dotProduct(geometry.multiplyByVector(p0Vect));
 
     double discriminant = b * b - 4.0 * a * c;
-    if (discriminant < epsilon) return maxT + 1.0; // No real roots
+    if (discriminant < epsilon) return maximumTimes + 1.0; // No real roots
 
     double sqrtDiscriminant = sqrt(discriminant);
     double invDenom = 0.5 / a;  // Inverse of denominator 2a
 
     double t1 = (-b - sqrtDiscriminant) * invDenom;
-    if (t1 >= minT && t1 < maxT && !clip(ray.computePosition(t1))) return t1;
+    if (t1 >= minT && t1 < maximumTimes && !clip(ray.computePosition(t1))) return t1;
 
     double t2 = (-b + sqrtDiscriminant) * invDenom;
-    if (t2 >= minT && t2 < maxT && !clip(ray.computePosition(t2))) return t2;
+    if (t2 >= minT && t2 < maximumTimes && !clip(ray.computePosition(t2))) return t2;
 
-    return maxT + 1.0;
+    return maximumTimes + 1.0;
 }
 
 std::pair<Vec, bool> Quadric::calculateNormal(const Vec& intersectionPoint, const Ray& ray) const {
@@ -495,11 +515,11 @@ void openFile(ifstream& ifs, const char* filename) {
 }
 
 void parseCameraSettings(ifstream& ifs) {
-    ifs >> cameraX >> cameraY >> cameraZ >> zCoor;
+    ifs >> camera1 >> camera2 >> camera3 >> zCoor;
 }
 
 void parseDimensions(ifstream& ifs) {
-    ifs >> minX >> maxX >> minY >> maxY;
+    ifs >> minimumX >> maximumX >> minimumY >> maximumY;
 }
 
 Color readColor(ifstream& ifs) {
@@ -509,10 +529,10 @@ Color readColor(ifstream& ifs) {
 }
 
 void calculatePixels() {
-    pixelWidth = (maxX - minX) / horizontalResolution;
-    pixelHeight = (maxY - minY) / verticalResolution;
-    pixelStartX = (minX + pixelWidth / 2.0);
-    pixelStartY = (maxY - pixelHeight / 2.0);
+    pixW = (maximumX - minimumX) / horizontalResolution;
+    pixH = (maximumY - minimumY) / verticalResolution;
+    pixStartX = (minimumX + pixW / 2.0);
+    pixStartY = (maximumY - pixH / 2.0);
 }
 
 void parseObjects(ifstream& ifs) {
@@ -528,7 +548,7 @@ void parseObjects(ifstream& ifs) {
 }
 
 
-void parseSceneFile(char* sceneName) {
+void sceneParsing(char* sceneName) {
     assert(sceneName != nullptr);
     ifstream ifs;
     openFile(ifs, sceneName);
@@ -556,12 +576,12 @@ void createImageStorage() {
 void initializePixelValues() {
     for (int i = 0; i < verticalResolution; ++i) {
         for (int j = 0; j < horizontalResolution; ++j) {
-            image[i].push_back(BLACK_COLOR);
+            image[i].push_back(Default_black);
         }
     }
 }
 
-void initializeImage() {
+void beginImageGeneration() {
     createImageStorage();
     initializePixelValues();
 }
@@ -606,7 +626,7 @@ Color calculateReflectedColor(Figure* obj, const Ray& reflectedRay, double depth
 Color RT_reflect(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal, double depth)
 {
     if (depth > maxDepth || !obj->hasReflection()) {
-        return BLACK_COLOR;
+        return Default_black;
     }
 
     Vec reflectionDirection = calculateReflectionDirection(ray, normal);
@@ -655,14 +675,14 @@ Color calculateTransmittedColor(Figure* obj, const Ray& transmittedRay, double d
 Color RT_transmit(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& normal, bool entering, double depth)
 {
     if (depth > maxDepth || !obj->hasTransmission()) {
-        return BLACK_COLOR;
+        return Default_black;
     }
 
     double indexRatio = calculateIndexRatio(obj, entering);
     Vec transmissionDirection = calculateTransmissionDirection(ray, normal, indexRatio);
 
     if (transmissionDirection.magnitude() == 0) {  // Handles total internal reflection
-        return BLACK_COLOR;
+        return Default_black;
     }
 
     Ray transmittedRay(intersection, intersection.add(transmissionDirection));
@@ -674,7 +694,7 @@ Color RT_transmit(Figure* obj, const Ray& ray, const Vec& intersection, const Ve
 // Calculates the diffuse component of shading based on the light's interaction with an object
 Color diffuseShade(Figure* obj, Light* light, double dotProduct)
 {
-    return (dotProduct > 0.0) ? dotProduct * light->getShading().multiply(obj->getDiffuseColor()) : BLACK_COLOR;
+    return (dotProduct > 0.0) ? dotProduct * light->getShading().multiply(obj->getDiffuseColor()) : Default_black;
 }
 
 // Helper to calculate reflected direction for specular lighting
@@ -697,21 +717,21 @@ Color specularShade(Figure* obj, const Vec& normal, Light* light, const Vec& lig
 {
     Vec reflectDirection = calculateReflectDirection(normal, lightDirection, dotProduct);
     double specularity = calculateSpecularIntensity(ray, reflectDirection, obj->getShininess());
-    return (specularity > 0.0) ? specularity * light->getShading().multiply(obj->getSpecularColor()) : BLACK_COLOR;
+    return (specularity > 0.0) ? specularity * light->getShading().multiply(obj->getSpecularColor()) : Default_black;
 }
 
 
 
 
 // Finds the nearest intersection of a ray with any figure in the scene, considering transparency
-pair<double, Figure*> nearestIntersection(const Ray& r, double minT, double maxT, bool mayBeTransparent = true)
+pair<double, Figure*> nearestIntersection(const Ray& r, double minT, double maximumTimes, bool mayBeTransparent = true)
 {
-    double nearestT = maxT + epsilon;
+    double nearestT = maximumTimes + epsilon;
     Figure* nearestFigure = NULL;
 
     for (auto& figure : shapeList) {
         if (mayBeTransparent || !figure->hasTransmission()) {
-            double currentT = figure->calculateIntersection(r, minT, maxT);
+            double currentT = figure->calculateIntersection(r, minT, maximumTimes);
             if (currentT < nearestT && currentT >= minT) {
                 nearestT = currentT;
                 nearestFigure = figure;
@@ -789,7 +809,7 @@ Color RT_shade(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& 
 // Trace a ray into the scene and determine the color at the intersection point
 Color RT_trace(const Ray& r, double depth)
 {
-    pair<double, Figure*> intersection = nearestIntersection(r, epsilon, maxT);
+    pair<double, Figure*> intersection = nearestIntersection(r, epsilon, maximumTimes);
     if (!intersection.second) {
         return backgroundColor;  // No intersection, return the background color
     }
@@ -808,17 +828,17 @@ Color RT_trace(const Ray& r, double depth)
 // Calculate the center coordinates of a pixel in the image grid
 pair<double, double> pixelCenter(int i, int j)
 {
-    double x = pixelStartX + j * pixelWidth;
-    double y = pixelStartY - i * pixelHeight;
+    double x = pixStartX + j * pixW;
+    double y = pixStartY - i * pixH;
     return { x, y };  // Using modern C++ initializer list
 }
 
 
 
 // Main rendering loop that processes each pixel to generate the final image
-void RT_algorithm()
+void RayTraceAlgo()
 {
-    Vec cameraOrigin(cameraX, cameraY, cameraZ);  // Define the camera origin
+    Vec cameraOrigin(camera1, camera2, camera3);  // Define the camera origin
     for (int i = 0; i < verticalResolution; i++)
     {
         for (int j = 0; j < horizontalResolution; j++)
@@ -866,14 +886,14 @@ Color traceSubPixel(const Vec& cameraOrigin, double x, double y, int depth) {
 }
 
 void superSample(int i, int j) {
-    Vec cameraOrigin(cameraX, cameraY, cameraZ);
+    Vec cameraOrigin(camera1, camera2, camera3);
     pair<double, double> pc = pixelCenter(i, j);
     double pcX = pc.first;
     double pcY = pc.second;
 
     int numSamples = 2 * ssRate + 1;
-    double subPixelWidth = pixelWidth / numSamples;
-    double subPixelHeight = pixelHeight / numSamples;
+    double subPixelWidth = pixW / numSamples;
+    double subPixelHeight = pixH / numSamples;
     Color accumulate;
 
     for (int ii = -ssRate; ii <= ssRate; ii++) {
@@ -887,30 +907,36 @@ void superSample(int i, int j) {
         }
     }
 
-    Color average = accumulate * (1.0 / (numSamples * numSamples)); // Calculate average color
+    Color average = (1.0 / (numSamples * numSamples))*accumulate; // Calculate average color
     image[i][j] = average;
 }
 
 
-void antiAliasing()
-{
-    vector< vector<bool> > needsSuperSample;
-    for (int i = 0; i < verticalResolution; i++)
-    {
-        needsSuperSample.push_back(vector<bool>());
-        needsSuperSample[i].reserve(horizontalResolution);
-        for (int j = 0; j < horizontalResolution; j++)
-            if (maxDifference(i, j) > aaThreshold)
-                needsSuperSample[i].push_back(true);
-            else needsSuperSample[i].push_back(false);
+vector<vector<bool>> determineSupersamplingNeeds() {
+    vector<vector<bool>> needsSuperSample(verticalResolution, vector<bool>(horizontalResolution, false));
+    for (int i = 0; i < verticalResolution; i++) {
+        for (int j = 0; j < horizontalResolution; j++) {
+            needsSuperSample[i][j] = (maxDifference(i, j) > aaThreshold);
+        }
     }
-    for (int i = 0; i < verticalResolution; i++)
-    {
-        for (int j = 0; j < horizontalResolution; j++)
-            if (needsSuperSample[i][j])  superSample(i, j);
-        
+    return needsSuperSample;
+}
+
+void performSuperSampling(const vector<vector<bool>>& needsSuperSample) {
+    for (int i = 0; i < verticalResolution; i++) {
+        for (int j = 0; j < horizontalResolution; j++) {
+            if (needsSuperSample[i][j]) {
+                superSample(i, j);
+            }
+        }
     }
 }
+
+void antiAliasing() {
+    vector<vector<bool>> needsSuperSample = determineSupersamplingNeeds();
+    performSuperSampling(needsSuperSample);
+}
+
 
 void writeImageFile()
 {
@@ -924,9 +950,12 @@ void writeImageFile()
 
 int main(int, char* argv[])
 {
-    parseSceneFile(argv[1]);
-    initializeImage();
-    RT_algorithm();
+    sceneParsing(argv[1]);
+
+    beginImageGeneration();
+
+    RayTraceAlgo();
+
     antiAliasing();
     writeImageFile();
     return 0;
