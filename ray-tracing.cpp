@@ -19,18 +19,21 @@ using namespace std;
 
 // defining global variables and constants
 
-double pixW;
 double  pixH;
+double pixW;
 
-double minimumX,   maximumX;
+
 double minimumY, maximumY;
+double minimumX,   maximumX;
+
+
 
 double  pixStartX;
 double pixStartY;
 
 int ssRate = 1;
 
-int horizontalResolution, verticalResolution;
+int horizontalRes, verticalRes;
 double zCoor;
 
 
@@ -41,7 +44,8 @@ list<Light*> lightList;
 
 
 const double epsilon = 0.00000000001;
-const int colorScale = 255;
+
+
 
 
 
@@ -529,8 +533,8 @@ Color readColor(ifstream& ifs) {
 }
 
 void calculatePixels() {
-    pixW = (maximumX - minimumX) / horizontalResolution;
-    pixH = (maximumY - minimumY) / verticalResolution;
+    pixW = (maximumX - minimumX) / horizontalRes;
+    pixH = (maximumY - minimumY) / verticalRes;
     pixStartX = (minimumX + pixW / 2.0);
     pixStartY = (maximumY - pixH / 2.0);
 }
@@ -557,7 +561,7 @@ void sceneParsing(char* sceneName) {
     backgroundColor = readColor(ifs);
     ambient = readColor(ifs);
     ifs >> maxDepth;
-    ifs >> horizontalResolution >> verticalResolution;
+    ifs >> horizontalRes >> verticalRes;
     calculatePixels();
     parseObjects(ifs);
     ifs.close();
@@ -566,16 +570,16 @@ void sceneParsing(char* sceneName) {
 
 
 void createImageStorage() {
-    image.reserve(verticalResolution);
-    for (int i = 0; i < verticalResolution; ++i) {
+    image.reserve(verticalRes);
+    for (int i = 0; i < verticalRes; ++i) {
         image.push_back(vector<Color>());
-        image[i].reserve(horizontalResolution);
+        image[i].reserve(horizontalRes);
     }
 }
 
 void initializePixelValues() {
-    for (int i = 0; i < verticalResolution; ++i) {
-        for (int j = 0; j < horizontalResolution; ++j) {
+    for (int i = 0; i < verticalRes; ++i) {
+        for (int j = 0; j < horizontalRes; ++j) {
             image[i].push_back(Default_black);
         }
     }
@@ -588,8 +592,8 @@ void beginImageGeneration() {
 
 void writeP3Header(ofstream& ofs, const char* outputFile) {
     ofs << "P3" << "\n"
-        << horizontalResolution << " " << verticalResolution << "\n"
-        << colorScale << "\n";
+        << horizontalRes << " " << verticalRes << "\n"
+        << 255 << "\n";
 }
 
 
@@ -839,9 +843,9 @@ pair<double, double> pixelCenter(int i, int j)
 void RayTraceAlgo()
 {
     Vec cameraOrigin(camera1, camera2, camera3);  // Define the camera origin
-    for (int i = 0; i < verticalResolution; i++)
+    for (int i = 0; i < verticalRes; i++)
     {
-        for (int j = 0; j < horizontalResolution; j++)
+        for (int j = 0; j < horizontalRes; j++)
         {
             pair<double, double> pc = pixelCenter(i, j);  // Get pixel center
             double x = pc.first;
@@ -865,11 +869,11 @@ double maxDifference(int i, int j) {
 
     for (int m = -1; m <= 1; m++) {
         int mi = i + m;
-        if (mi < 0 || mi >= verticalResolution) continue;
+        if (mi < 0 || mi >= verticalRes) continue;
 
         for (int n = -1; n <= 1; n++) {
             int nj = j + n;
-            if (nj < 0 || nj >= horizontalResolution) continue;
+            if (nj < 0 || nj >= horizontalRes) continue;
             if (m != 0 || n != 0) {
                 const Color& neighborColor = image[mi][nj];
                 maximum = std::max(maximum, getMaxColorDifference(pixelColor, neighborColor));
@@ -913,9 +917,9 @@ void superSample(int i, int j) {
 
 
 vector<vector<bool>> determineSupersamplingNeeds() {
-    vector<vector<bool>> needsSuperSample(verticalResolution, vector<bool>(horizontalResolution, false));
-    for (int i = 0; i < verticalResolution; i++) {
-        for (int j = 0; j < horizontalResolution; j++) {
+    vector<vector<bool>> needsSuperSample(verticalRes, vector<bool>(horizontalRes, false));
+    for (int i = 0; i < verticalRes; i++) {
+        for (int j = 0; j < horizontalRes; j++) {
             needsSuperSample[i][j] = (maxDifference(i, j) > aaThreshold);
         }
     }
@@ -923,8 +927,8 @@ vector<vector<bool>> determineSupersamplingNeeds() {
 }
 
 void performSuperSampling(const vector<vector<bool>>& needsSuperSample) {
-    for (int i = 0; i < verticalResolution; i++) {
-        for (int j = 0; j < horizontalResolution; j++) {
+    for (int i = 0; i < verticalRes; i++) {
+        for (int j = 0; j < horizontalRes; j++) {
             if (needsSuperSample[i][j]) {
                 superSample(i, j);
             }
@@ -932,18 +936,18 @@ void performSuperSampling(const vector<vector<bool>>& needsSuperSample) {
     }
 }
 
-void antiAliasing() {
+void totalAntiAliasing() {
     vector<vector<bool>> needsSuperSample = determineSupersamplingNeeds();
     performSuperSampling(needsSuperSample);
 }
 
 
-void writeImageFile()
+void outputImage()
 {
     ofstream ofs;
     openOutputFile("picture.ppm", ofs);
-    for (int i = 0; i < verticalResolution; i++)
-        for (int j = 0; j < horizontalResolution; j++)
+    for (int i = 0; i < verticalRes; i++)
+        for (int j = 0; j < horizontalRes; j++)
             image[i][j].writeToStream(ofs);
     ofs.close();
 }
@@ -956,8 +960,8 @@ int main(int, char* argv[])
 
     RayTraceAlgo();
 
-    antiAliasing();
-    writeImageFile();
+    totalAntiAliasing();
+    outputImage();
     return 0;
 }
 
