@@ -4,6 +4,17 @@
 
 This project is a ray tracer implementation which simulates the behavior of light to render 3D scenes onto a 2D image. It supports multiple geometric shapes, light sources, and material properties. The ray tracer outputs them in PPM (Portable Pixmap) format. It uses no additional libraries and is written in plain C++.
 
+## Sample Output Images
+![An infinite sea of pink spheres on a plane](images_png\picture17.png)
+
+![A room defined by six planes with two spheres sitting on the floor.](images_png\picture16.png)
+
+![Two transparent spheres refracting light from a third sphere](images_png\picture13.png)
+
+Full sample scene and output image descriptions below
+
+
+
 ## PPM File Format
 
 ### Overview
@@ -19,17 +30,6 @@ The Portable Pixmap (PPM) format is a simple, ASCII-based image format. The stru
 8. **Whitespace**: More whitespace.
 9. **Pixel Data**: Width * height pixels, each represented by three ASCII decimal values for red, green, and blue components, respectively.
 
-### Example
-```plaintext
-P3
-# example.ppm
-4 4
-15
- 0  0  0   0  0  0   0  0  0  15  0 15
- 0  0  0   0 15  7   0  0  0   0  0  0
- 0  0  0   0  0  0   0 15  7   0  0  0
-15  0 15   0  0  0   0  0  0   0  0  0
-```
 
 ## PPM File Format
 
@@ -88,6 +88,48 @@ The scene file defines the camera, light sources, spheres, and planes in the sce
   - **Flags**: Reflective: isReflective, Transparent: isTransparent
   - **Checkered Pattern Directions**: p1x p1y p1z, p2x p2y p2z
   - **Example**: 0.0 0.0 1.0 -7.50 0.00 0.3 0.3 0.0 0.3 0.3 0.3 0.3 0.3 0.0 0.0 0.0 0.0 0.0 0.0 20.0 1.0 0 0
+
+### Example scene
+```
+0.0  0.0  0.0
+
+-2.0
+
+-1.0  1.0
+
+-1.0  1.0
+
+0.0  0.0  0.0
+
+1.0  1.0  1.0
+
+2
+
+500 500
+
+2
+
+ 5.0   7.5  -5.0   1.0  1.0  1.0   1.0  0.0  0.0
+
+-5.0   7.5  -5.0   1.0  1.0  1.0   1.0  0.0  0.0
+
+3
+
+ 0.0  -7.0  -25.0  10.0    0.3  0.0  0.3    0.35  0.0  0.35   0.2  0.2  0.2   
+ 0.0  0.0  0.0             0.0  0.0  0.0    20.0  1.0  0   0  
+
+ 2.0  4.0  -11.5  1.0      0.0  0.3  0.3    0.0  0.35  0.35   0.2  0.2  0.2   
+ 0.0  0.0  0.0             0.0  0.0  0.0    20.0  1.0   0   0  
+
+ -2.0  4.0  -11.5  1.0    0.3  0.3  0.0     0.35  0.35  0.0   0.2  0.2  0.2   
+  0.0  0.0  0.0           0.0  0.0  0.0     20.0  1.0   0   0  
+  ```
+
+## Usage
+
+
+
+
 
 ## Sample Output Images
 ### picture01.ppm
