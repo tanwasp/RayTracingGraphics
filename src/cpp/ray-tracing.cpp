@@ -693,9 +693,6 @@ Color specularShade(Figure* obj, const Vec& normal, Light* light, const Vec& lig
     return (specularity > 0.0) ? specularity * light->getShading().multiply(obj->getSpecularColor()) : Default_black;
 }
 
-
-
-
 // Finds the nearest intersection of a ray with any figure in the scene, considering transparency
 pair<double, Figure*> nearestIntersection(const Ray& r, double minT, double maximumTimes, bool mayBeTransparent = true)
 {
@@ -777,8 +774,6 @@ Color RT_shade(Figure* obj, const Ray& ray, const Vec& intersection, const Vec& 
     return shadedColor;
 }
 
-
-
 // Trace a ray into the scene and determine the color at the intersection point
 Color RT_trace(const Ray& r, double depth)
 {
@@ -797,7 +792,6 @@ Color RT_trace(const Ray& r, double depth)
     return RT_shade(intersection.second, r, intersectionPoint, normal, entering, depth);
 }
 
-
 // Calculate the center coordinates of a pixel in the image grid
 pair<double, double> pixelCenter(int i, int j)
 {
@@ -805,8 +799,6 @@ pair<double, double> pixelCenter(int i, int j)
     double y = pixStartY - i * pixH;
     return { x, y };  // Using modern C++ initializer list
 }
-
-
 
 // Main rendering loop that processes each pixel to generate the final image
 void RayTraceAlgo()
@@ -825,8 +817,6 @@ void RayTraceAlgo()
         }
     }
 }
-
-
 
 double getMaxColorDifference(const Color& pixelColor, const Color& neighborColor) {
     return std::max(0.0, pixelColor.difference(neighborColor));
