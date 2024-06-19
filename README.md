@@ -5,7 +5,7 @@
 This project is a ray tracer implementation which simulates the behavior of light to render 3D scenes onto a 2D image. It supports multiple geometric shapes, light sources, and material properties. The ray tracer outputs them in PPM (Portable Pixmap) format. It uses no additional libraries and is written in plain C++.
 
 ## Sample Output Images
-![An infinite sea of pink spheres on a plane](images_png\picture17.png)
+![An infinite sea of pink spheres on a plane](RayTracingGraphics/images_png\picture17.png)
 
 ![A room defined by six planes with two spheres sitting on the floor.](images_png\picture16.png)
 
@@ -127,7 +127,19 @@ The scene file defines the camera, light sources, spheres, and planes in the sce
 
 ## Usage
 
+### Compile the Project
+To compile the project, use the following command:
+```sh
+gcc -o raytracer raytracer.c
+```
 
+### Run the Ray Tracer
+To run the ray tracer, use the following command with the scene file and output file as arguments:
+
+```sh
+Copy code
+./raytracer scene.txt output.ppm
+```
 
 
 
