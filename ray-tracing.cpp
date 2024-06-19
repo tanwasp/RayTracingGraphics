@@ -9,26 +9,15 @@
 #include <cfloat>
 #include <fstream>
 
-/// <summary>
-/// I looked at your solution to get an idea of the functions in the header file and the constants. But I implemented the functions from scratch.
-/// </summary>
-
 using namespace std;
 
-// importing header file
-
 #include "ray-tracing.h"
-
-// defining global variables and constants
 
 double  pixH;
 double pixW;
 
-
 double minimumY, maximumY;
 double minimumX,   maximumX;
-
-
 
 double  pixStartX;
 double pixStartY;
@@ -38,41 +27,26 @@ int ssr = 1;
 int horizontalRes, verticalRes;
 double zCoor;
 
-
 vector < vector<  Color > > image;
 
 list<Figure*> shapeList;
 list<Light*> lightList;
 
-
 const double epsilon = 0.00000000001;
 
-
-
-
-
 double camera1, camera2, camera3;
-
-
 const double aaThreshold = 0.25;
 
 int maxDepth;
 Color backgroundColor;
 Color ambient;
 
-
-
-
-
-
 // Utility functions for clamping and getting maximum values
-
-
 
 // Color Implementation
 
-int clamp(int value, int minVal, int maxVal) { return (value < minVal) ? minVal : (value > maxVal ? maxVal : value); }
-int getMax(int first, int second) { return (first > second) ? first : second; }
+static int clamp(int value, int minVal, int maxVal) { return (value < minVal) ? minVal : (value > maxVal ? maxVal : value); }
+static int getMax(int first, int second) { return (first > second) ? first : second; }
 
 const double maximumTimes = 1000000;
 
@@ -83,7 +57,6 @@ Color::Color(std::ifstream& input) {
 }
 
 const Color Default_black;
-
 
 Color::Color(double red, double green, double blue) : redComponent(red), greenComponent(green), blueComponent(blue) {}
 
@@ -117,13 +90,7 @@ double Color::difference(const Color& other) const {
 
 // Color Implementation End
 
-
-
-
 // Vec Implementation
-
-
-
 
 Vec::Vec() : components{ 0.0, 0.0, 0.0 } {}
 
