@@ -9,7 +9,9 @@
 #include <cfloat>
 #include <fstream>
 
-
+/// <summary>
+/// I looked at your solution to get an idea of the functions in the header file and the constants. But I implemented the functions from scratch.
+/// </summary>
 
 using namespace std;
 
@@ -31,7 +33,7 @@ double minimumX,   maximumX;
 double  pixStartX;
 double pixStartY;
 
-int ssRate = 1;
+int ssr = 1;
 
 int horizontalRes, verticalRes;
 double zCoor;
@@ -895,17 +897,17 @@ void superSample(int i, int j) {
     double pcX = pc.first;
     double pcY = pc.second;
 
-    int numSamples = 2 * ssRate + 1;
+    int numSamples = 2 * ssr + 1;
     double subPixelWidth = pixW / numSamples;
     double subPixelHeight = pixH / numSamples;
     Color accumulate;
 
-    for (int ii = -ssRate; ii <= ssRate; ii++) {
-        for (int jj = -ssRate; jj <= ssRate; jj++) {
+    for (int ii = -ssr; ii <= ssr; ii++) {
+        for (int jj = -ssr; jj <= ssr; jj++) {
             double x = pcX + jj * subPixelWidth;
             double y = pcY + ii * subPixelHeight;
             if (ii == 0 && jj == 0)
-                accumulate = accumulate.add(image[i][j]); // Use the original pixel color for the center
+                accumulate = accumulate.add(image[i][j]); 
             else
                 accumulate = accumulate.add(traceSubPixel(cameraOrigin, x, y, 1)); // Trace and add the color from super sampled pixel
         }
