@@ -5,11 +5,11 @@
 This project is a ray tracer implementation which simulates the behavior of light to render 3D scenes onto a 2D image. It supports multiple geometric shapes, light sources, and material properties. The ray tracer outputs them in PPM (Portable Pixmap) format. It uses no additional libraries and is written in plain C++.
 
 ## Sample Output Images
-![An infinite sea of pink spheres on a plane](RayTracingGraphics/images_png\picture17.png)
+![An infinite sea of pink spheres on a plane](images_png/picture17.png)
 
-![A room defined by six planes with two spheres sitting on the floor.](images_png\picture16.png)
+![A room defined by six planes with two spheres sitting on the floor.](images_png/picture16.png)
 
-![Two transparent spheres refracting light from a third sphere](images_png\picture13.png)
+![Two transparent spheres refracting light from a third sphere](images_png/picture13.png)
 
 Full sample scene and output image descriptions below
 
